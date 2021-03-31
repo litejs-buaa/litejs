@@ -1,0 +1,16 @@
+RegExp/legacy-accessors  |||  24  |||  No-exception unsupported
+waitAsync/bigint  |||  44  |||  undefined
+waitAsync  |||  55  |||  undefined
+FinalizationRegistry  |||  61  |||  undefined
+WeakRef  |||  30  |||  undefined
+tail-call optimization  |||  28  |||  unexpected
+RegExp/hasIndices+flags  |||  28  |||  invalid + undefined
+TypedArray invalid key+detached-buffer  |||  41   ||| unsafe
+top-level-await  |||  123  |||  unsupport await
+
+test262/test/language/statements/class/subclass/default-constructor-spread-override.js
+test262/test/built-ins/Function/internals/Call/class-ctor-realm.js
+test262/test/built-ins/Function/internals/Construct/derived-this-uninitialized-realm.js
+test262/test/built-ins/Function/prototype/restricted-property-arguments.js
+test262/test/built-ins/Function/prototype/restricted-property-caller.js
+test262/test/language/statements/for-of/head-lhs-async-invalid.js
