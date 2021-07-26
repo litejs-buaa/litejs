@@ -75,13 +75,13 @@ token:
 identifierName: identifierStart (identifierPart)*;
 
 identifierStart:
-	unicodeLetter
+	unicodeIDStart
 	| DOLLAR
 	| UNDERSCORE
 	| BSLASH unicodeEscapeSequence;
 
 identifierPart:
-	unicodeLetter
+	unicodeIDContinue
 	| DOLLAR
 	| BSLASH unicodeEscapeSequence
 	| ZWNJ
@@ -913,3 +913,7 @@ UNICODE_CONNECTOR_PUNCTUATION:
 	| ('\uFE4D' ..'\uFE4F')
 	| '\uFF3F'
 	| '\uFF65';
+
+unicodeIDStart: unicodeLetter;
+
+unicodeIDContinue: unicodeLetter | UNICODE_DIGIT | UNDERSCORE;
