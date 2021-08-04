@@ -50,7 +50,12 @@ enum
   VOID,
   WHILE,
   WITH,
-  YIELD
+  YIELD,
+  SEMI,
+  LBRACK,
+  RBRACK,
+  LBRACE,
+  RBRACE
 };
 
 char source_code[1024];
@@ -60,6 +65,57 @@ char source_code[1024];
 #define __LJS_SP (' ')
 #define __LJS_DOLLAR ('$')
 #define __LJS_UNDERSCORE ('_')
+#define __LJS_LBRACE ('{')
+#define __LJS_RBRACE ('}')
+#define __LJS_LBRACK ('(')
+#define __LJS_RBRACK (')')
+// #define __LJS_ ('[')
+// #define __LJS_ (']')
+#define __LJS_DOT ('.')
+#define __LJS_DOT3 ("...")
+#define __LJS_SEMI (';')
+#define __LJS_COMMA (',')
+#define __LJS_LT ('<')
+#define __LJS_GT ('>')
+#define __LJS_LTEQ ("<=")
+#define __LJS_GTEQ (">=")
+#define __LJS_EQ2 ("==")
+#define __LJS_NOTEQ ("!=")
+#define __LJS_EQ3 ("===")
+#define __LJS_NOTEQ2 ("!==")
+#define __LJS_PLUS ('+')
+#define __LJS_MINUS ('-')
+#define __LJS_STAR ('*')
+#define __LJS_PERCENT ('%')
+#define __LJS_STAR2 ("**")
+#define __LJS_PLUS2 ("++")
+#define __LJS_MINUS2 ("--")
+#define __LJS_LSHIFT ("<<")
+#define __LJS_RSHIFT (">>")
+#define __LJS_GT3 (">>>")
+#define __LJS_AMPER ('&')
+#define __LJS_PIPE ('|')
+#define __LJS_CAROT ('^')
+#define __LJS_EXCLAMATION ('!')
+#define __LJS_TILDE ('~')
+#define __LJS_AMPER2 ("&&")
+#define __LJS_PIPE2 ("||")
+#define __LJS_QUESTION2 ("??")
+#define __LJS_QUESTION ('?')
+#define __LJS_COLON (':')
+#define __LJS_EQ ('=')
+#define __LJS_PLUSEQ ("+=")
+#define __LJS_MINUSEQ ("-=")
+#define __LJS_TIMESEQ ("*=")
+#define __LJS_PERCENTEQ ("%=")
+#define __LJS_TIME2SEQ ("**=")
+#define __LJS_LSHIFTEQ ("<<=")
+#define __LJS_RSHIFTEQ (">>=")
+#define __LJS_GT3EQ (">>>=")
+#define __LJS_AMPEREQ ("&=")
+#define __LJS_PIPEEQ ("|=")
+#define __LJS_CAROTEQ ("^=")
+#define __LJS_ARROW ("=>")
 // #define __LJS_VT (u8"\u000b")
 // #define __LJS_FF (u8"\u000c")
 // #define __LJS_SP (u8"\u0020")
@@ -303,6 +359,10 @@ __LJS_NT_Return *identifier_finish(int pos)
   {
     status = YIELD;
   }
+  else
+  {
+    status = IDENTIFIER;
+  }
   return finish(pos);
 }
 
@@ -333,6 +393,31 @@ __LJS_NT_Return *next_token(int position)
       {
         status = IDENTIFIER;
         continue;
+      }
+      else if (c == LJS(SEMI))
+      {
+        status = SEMI;
+        return finish(pos);
+      }
+      else if (c == LJS(LBRACK))
+      {
+        status = LBRACK;
+        return finish(pos);
+      }
+      else if (c == LJS(RBRACK))
+      {
+        status = RBRACK;
+        return finish(pos);
+      }
+      else if (c == LJS(LBRACE))
+      {
+        status = LBRACE;
+        return finish(pos);
+      }
+      else if (c == LJS(RBRACE))
+      {
+        status = RBRACE;
+        return finish(pos);
       }
       break;
     case IDENTIFIER:
@@ -378,7 +463,7 @@ char *translate(int value)
   case IDENTIFIER:
     return "IDENTIFIER";
   default:
-    return "TYPE!";
+    return "TOKEN";
   }
 }
 
@@ -395,7 +480,9 @@ int main()
     __LJS_NT_Return *res = next_token(position);
     position = res->position;
     // printf("position: %d\n", position);
-    printf("%s\n", translate(res->token->type));
+    if (res->token->type == WHITE_SPACE)
+      continue;
+    printf("%s: '%s'\n", translate(res->token->type), res->token->content);
   }
 
   fclose(fp);
