@@ -3,137 +3,9 @@
 #include <stdlib.h>
 #include <uchar.h>
 #include <memory.h>
-
-// char a[] = u8"\u000b";
-// char b[] = u8"\u000c";
-
-// status
-enum
-{
-  INITIAL,
-  WHITE_SPACE,
-  IDENTIFIER,
-  AWAIT,
-  BREAK,
-  CASE,
-  CATCH,
-  CLASS,
-  CONST,
-  CONTINUE,
-  DEBUGGER,
-  DEFAULT,
-  DELETE,
-  DO,
-  ELSE,
-  ENUM,
-  EXPORT,
-  EXTENDS,
-  FALSE,
-  FINALLY,
-  FOR,
-  FUNCTION,
-  IF,
-  IMPORT,
-  IN,
-  INSTANCEOF,
-  NEW,
-  _NULL,
-  RETURN,
-  SUPER,
-  SWITCH,
-  THIS,
-  THROW,
-  TRUE,
-  TRY,
-  TYPEOF,
-  VAR,
-  VOID,
-  WHILE,
-  WITH,
-  YIELD,
-  SEMI,
-  LBRACK,
-  RBRACK,
-  LBRACE,
-  RBRACE
-};
+#include "template.h"
 
 char source_code[1024];
-
-#define LJS(content) __LJS_##content
-#define __LJS_TAB ('\t')
-#define __LJS_SP (' ')
-#define __LJS_DOLLAR ('$')
-#define __LJS_UNDERSCORE ('_')
-#define __LJS_LBRACE ('{')
-#define __LJS_RBRACE ('}')
-#define __LJS_LBRACK ('(')
-#define __LJS_RBRACK (')')
-// #define __LJS_ ('[')
-// #define __LJS_ (']')
-#define __LJS_DOT ('.')
-#define __LJS_DOT3 ("...")
-#define __LJS_SEMI (';')
-#define __LJS_COMMA (',')
-#define __LJS_LT ('<')
-#define __LJS_GT ('>')
-#define __LJS_LTEQ ("<=")
-#define __LJS_GTEQ (">=")
-#define __LJS_EQ2 ("==")
-#define __LJS_NOTEQ ("!=")
-#define __LJS_EQ3 ("===")
-#define __LJS_NOTEQ2 ("!==")
-#define __LJS_PLUS ('+')
-#define __LJS_MINUS ('-')
-#define __LJS_STAR ('*')
-#define __LJS_PERCENT ('%')
-#define __LJS_STAR2 ("**")
-#define __LJS_PLUS2 ("++")
-#define __LJS_MINUS2 ("--")
-#define __LJS_LSHIFT ("<<")
-#define __LJS_RSHIFT (">>")
-#define __LJS_GT3 (">>>")
-#define __LJS_AMPER ('&')
-#define __LJS_PIPE ('|')
-#define __LJS_CAROT ('^')
-#define __LJS_EXCLAMATION ('!')
-#define __LJS_TILDE ('~')
-#define __LJS_AMPER2 ("&&")
-#define __LJS_PIPE2 ("||")
-#define __LJS_QUESTION2 ("??")
-#define __LJS_QUESTION ('?')
-#define __LJS_COLON (':')
-#define __LJS_EQ ('=')
-#define __LJS_PLUSEQ ("+=")
-#define __LJS_MINUSEQ ("-=")
-#define __LJS_TIMESEQ ("*=")
-#define __LJS_PERCENTEQ ("%=")
-#define __LJS_TIME2SEQ ("**=")
-#define __LJS_LSHIFTEQ ("<<=")
-#define __LJS_RSHIFTEQ (">>=")
-#define __LJS_GT3EQ (">>>=")
-#define __LJS_AMPEREQ ("&=")
-#define __LJS_PIPEEQ ("|=")
-#define __LJS_CAROTEQ ("^=")
-#define __LJS_ARROW ("=>")
-// #define __LJS_VT (u8"\u000b")
-// #define __LJS_FF (u8"\u000c")
-// #define __LJS_SP (u8"\u0020")
-// #define __LJS_NBSP (u8"\u00a0")
-// #define __LJS_ZWNBSP (u8"\u2060")
-// #define __LJS_USP (u8"\u0009")
-
-typedef struct token
-{
-  int type;
-  char content[100];
-} Token;
-
-typedef struct
-{
-  Token *token;
-  int position;
-} __LJS_NT_Return;
 
 int status;
 int token_loc;
@@ -141,9 +13,12 @@ char content[100];
 int content_loc;
 char c;
 
-__LJS_NT_Return *finish(int new_pos);
+char get_char(int position)
+{
+  return source_code[position];
+}
 
-void init()
+void nt_init()
 {
   token_loc = 0;
   content_loc = 0;
@@ -154,6 +29,8 @@ void init()
   }
   status = INITIAL;
 }
+
+void nt_error();
 
 int is_letter(char c)
 {
@@ -203,6 +80,17 @@ int is_identifier_part(char c)
     return 0;
   }
 }
+
+int is_punctuator_part(char c)
+{
+  char *charset = LJS(PUNCTUATOR_CHARS);
+  for (int i = 0; i < strlen(charset); ++i)
+    if (c == charset[i])
+      return 1;
+  return 0;
+}
+
+__LJS_NT_Return *finish(int new_pos);
 
 __LJS_NT_Return *identifier_finish(int pos)
 {
@@ -366,14 +254,165 @@ __LJS_NT_Return *identifier_finish(int pos)
   return finish(pos);
 }
 
-char get_char(int position)
+__LJS_NT_Return *punctuator_finish(int pos)
 {
-  return source_code[position];
+  // printf("content = %s\n", content);
+  if (strcmp(content, LJS(LBRACE)) == 0)
+    status = LBRACE;
+  else if (strcmp(content, LJS(LBRACK)) == 0)
+  {
+    status = LBRACK;
+  }
+  else if (strcmp(content, LJS(RBRACK)) == 0)
+  {
+    status = RBRACK;
+  }
+  else if (strcmp(content, LJS(LBRACKET)) == 0)
+  {
+    status = LBRACKET;
+  }
+  else if (strcmp(content, LJS(RBRACKET)) == 0)
+  {
+    status = RBRACKET;
+  }
+  else if (strcmp(content, LJS(DOT)) == 0)
+  {
+    status = DOT;
+  }
+  else if (strcmp(content, LJS(DOT3)) == 0)
+  {
+    status = DOT3;
+  }
+  else if (strcmp(content, LJS(SEMI)) == 0)
+  {
+    status = SEMI;
+  }
+  else if (strcmp(content, LJS(COMMA)) == 0)
+  {
+    status = COMMA;
+  }
+  else if (strcmp(content, LJS(LT)) == 0)
+  {
+    status = LT;
+  }
+  else if (strcmp(content, LJS(GT)) == 0)
+  {
+    status = GT;
+  }
+  else if (strcmp(content, LJS(LTEQ)) == 0)
+  {
+    status = LTEQ;
+  }
+  else if (strcmp(content, LJS(GTEQ)) == 0)
+  {
+    status = GTEQ;
+  }
+  else if (strcmp(content, LJS(EQ2)) == 0)
+  {
+    status = EQ2;
+  }
+  else if (strcmp(content, LJS(NOTEQ)) == 0)
+  {
+    status = NOTEQ;
+  }
+  else if (strcmp(content, LJS(EQ3)) == 0)
+  {
+    status = EQ3;
+  }
+  else if (strcmp(content, LJS(NOTEQ2)) == 0)
+  {
+    status = NOTEQ2;
+  }
+  else if (strcmp(content, LJS(MINUS)) == 0)
+  {
+    status = MINUS;
+  }
+  else if (strcmp(content, LJS(STAR)) == 0)
+  {
+    status = STAR;
+  }
+  else if (strcmp(content, LJS(PERCENT)) == 0)
+  {
+    status = PERCENT;
+  }
+  else if (strcmp(content, LJS(STAR2)) == 0)
+  {
+    status = STAR2;
+  }
+  else if (strcmp(content, LJS(PLUS2)) == 0)
+  {
+    status = PLUS2;
+  }
+  else if (strcmp(content, LJS(MINUS2)) == 0)
+  {
+    status = MINUS2;
+  }
+  else if (strcmp(content, LJS(LSHIFT)) == 0)
+  {
+    status = LSHIFT;
+  }
+  else if (strcmp(content, LJS(RSHIFT)) == 0)
+  {
+    status = RSHIFT;
+  }
+  else if (strcmp(content, LJS(GT3)) == 0)
+  {
+    status = GT3;
+  }
+  else if (strcmp(content, LJS(AMPER)) == 0)
+  {
+    status = AMPER;
+  }
+  else if (strcmp(content, LJS(PIPE)) == 0)
+  {
+    status = CAROT;
+  }
+  else if (strcmp(content, LJS(EXCLAMATION)) == 0)
+  {
+    status = EXCLAMATION;
+  }
+  else if (strcmp(content, LJS(TILDE)) == 0)
+  {
+    status = TILDE;
+  }
+  else if (strcmp(content, LJS(AMPER2)) == 0)
+  {
+    status = AMPER2;
+  }
+  else if (strcmp(content, LJS(PIPE2)) == 0)
+  {
+    status = PIPE2;
+  }
+  else if (strcmp(content, LJS(QUESTION2)) == 0)
+  {
+    status = QUESTION2;
+  }
+  else if (strcmp(content, LJS(QUESTION)) == 0)
+  {
+    status = QUESTION;
+  }
+  else if (strcmp(content, LJS(COLON)) == 0)
+  {
+    status = COLON;
+  }
+  else if (strcmp(content, LJS(EQ)) == 0)
+  {
+    status = EQ;
+  }
+  else if (strcmp(content, LJS(PLUSEQ)) == 0)
+  {
+    status = PLUSEQ;
+  }
+  else
+  {
+    nt_error(pos);
+  }
+  return finish(pos);
 }
 
 __LJS_NT_Return *next_token(int position)
 {
-  init();
+  nt_init();
   int pos = position;
   // printf("%d\n", content_loc);
   while (1)
@@ -394,30 +433,14 @@ __LJS_NT_Return *next_token(int position)
         status = IDENTIFIER;
         continue;
       }
-      else if (c == LJS(SEMI))
+      else if (is_punctuator_part(c))
       {
-        status = SEMI;
-        return finish(pos);
+        status = PUNCTUATOR;
+        continue;
       }
-      else if (c == LJS(LBRACK))
+      else
       {
-        status = LBRACK;
-        return finish(pos);
-      }
-      else if (c == LJS(RBRACK))
-      {
-        status = RBRACK;
-        return finish(pos);
-      }
-      else if (c == LJS(LBRACE))
-      {
-        status = LBRACE;
-        return finish(pos);
-      }
-      else if (c == LJS(RBRACE))
-      {
-        status = RBRACE;
-        return finish(pos);
+        nt_error(pos);
       }
       break;
     case IDENTIFIER:
@@ -431,6 +454,18 @@ __LJS_NT_Return *next_token(int position)
       else
       {
         return identifier_finish(--pos);
+      }
+      break;
+    case PUNCTUATOR:
+      c = get_char(pos++);
+      if (is_punctuator_part(c))
+      {
+        content[content_loc++] = c;
+        continue;
+      }
+      else
+      {
+        return punctuator_finish(--pos);
       }
       break;
     case WHITE_SPACE:
@@ -465,6 +500,11 @@ char *translate(int value)
   default:
     return "TOKEN";
   }
+}
+
+void nt_error(int pos)
+{
+  printf("SYNTAX ERROR as %d\n", pos);
 }
 
 int main()
