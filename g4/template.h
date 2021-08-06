@@ -4,7 +4,10 @@
   STAT(INITIAL)            \
   STAT(WHITE_SPACE)        \
   STAT(IDENT)              \
-  STAT(PUNCTUATOR)         \
+  STAT(PUNCT)              \
+  STAT(PUNCT_WAITEQ)       \
+  STAT(PUNCT_EQSTART)      \
+  STAT(PUNCT_REPEAT)       \
   STAT(AWAIT)              \
   STAT(BREAK)              \
   STAT(CASE)               \
@@ -161,8 +164,21 @@
 #define __LJS_DIVEQ ("/=")
 #define __LJS_RBRACE ("}")
 
+#define NEXTCHAR                \
+  {                             \
+    content[content_pos++] = c; \
+    continue;                   \
+  }
+#define SETSTAT(STAT) \
+  {                   \
+    status = STAT;    \
+    continue;         \
+  }
+
 const char *__LJS_PUNCTUATOR_SINGLE_CHARS = "{([])};,~:";
-const char *__LJS_PUNCTUATOR_CONTINUE_CHARS = ".<>=!+-*%&|^?/";
+const char *__LJS_PUNCTUATOR_WAITEQ_CHARS = "!%^/";
+const char *__LJS_PUNCTUATOR_EQSTART_CHARS = "=";
+const char *__LJS_PUNCTUATOR_REPEAT_CHARS = ".<>+-*&|?";
 const char *__LJS_PUNCTUATOR_CHARS = "{([])}.;,<>=!+-*%&|^~?:/";
 
 enum STAT_ENUM

@@ -10,10 +10,10 @@ char source_code[1024];
 int status;
 int token_loc;
 char content[100];
-int content_loc;
+int content_pos;
 char c;
 
-char get_char(int position)
+char nt_get_char(int position)
 {
   return source_code[position];
 }
@@ -26,7 +26,7 @@ const char *translate(int value)
 void nt_init()
 {
   token_loc = 0;
-  content_loc = 0;
+  content_pos = 0;
   int i = 0;
   for (i = 0; i < 100; i++)
   {
@@ -101,6 +101,29 @@ int is_punctuator_part(char c)
 int is_punctuator_single(char c)
 {
   const char *charset = LJS(PUNCTUATOR_SINGLE_CHARS);
+  for (int i = 0; i < strlen(charset); ++i)
+    if (c == charset[i])
+      return 1;
+  return 0;
+}
+
+int is_punctuator_waiteq(char c)
+{
+  const char *charset = LJS(PUNCTUATOR_WAITEQ_CHARS);
+  for (int i = 0; i < strlen(charset); ++i)
+    if (c == charset[i])
+      return 1;
+  return 0;
+}
+
+int is_punctuator_eqstart(char c)
+{
+  return c == '=';
+}
+
+int is_punctuator_repeat(char c)
+{
+  const char *charset = LJS(PUNCTUATOR_REPEAT_CHARS);
   for (int i = 0; i < strlen(charset); ++i)
     if (c == charset[i])
       return 1;
@@ -508,74 +531,6 @@ __LJS_NT_Return *punctuator_finish(int pos)
   return finish(pos);
 }
 
-__LJS_NT_Return *next_token(int position)
-{
-  nt_init();
-  int pos = position;
-  // printf("%d\n", content_loc);
-  while (1)
-  {
-    switch (status)
-    {
-    case INITIAL:
-      c = get_char(pos++);
-      content[content_loc++] = c;
-      // printf("c = %c\n", c);
-      if (c == LJS(TAB) || c == LJS(SP))
-      {
-        status = WHITE_SPACE;
-        continue;
-      }
-      else if (is_identifier_start(c))
-      {
-        status = IDENT;
-        continue;
-      }
-      else if (is_punctuator_single(c))
-      {
-        return punctuator_finish(pos);
-      }
-      else if (is_punctuator_part(c))
-      {
-        status = PUNCTUATOR;
-        continue;
-      }
-      else
-      {
-        nt_error(pos);
-      }
-      break;
-    case IDENT:
-      c = get_char(pos++);
-      // printf("identifier: %c\n", c);
-      if (is_identifier_part(c))
-      {
-        content[content_loc++] = c;
-        continue;
-      }
-      else
-      {
-        return identifier_finish(--pos);
-      }
-      break;
-    case PUNCTUATOR:
-      c = get_char(pos++);
-      if (is_punctuator_part(c))
-      {
-        content[content_loc++] = c;
-        continue;
-      }
-      else
-      {
-        return punctuator_finish(--pos);
-      }
-      break;
-    case WHITE_SPACE:
-      return finish(pos);
-    }
-  }
-}
-
 __LJS_NT_Return *finish(int new_pos)
 {
   Token *token = (Token *)malloc(sizeof(Token));
@@ -585,4 +540,88 @@ __LJS_NT_Return *finish(int new_pos)
   res->token = token;
   res->position = new_pos;
   return res;
+}
+
+__LJS_NT_Return *next_token(int position)
+{
+  nt_init();
+  int pos = position;
+  // printf("%d\n", content_pos);
+  while (1)
+  {
+    switch (status)
+    {
+    case WHITE_SPACE:
+      return finish(pos);
+    case INITIAL:
+      c = nt_get_char(pos++);
+      content[content_pos++] = c;
+      // printf("c = %c\n", c);
+      if (c == LJS(TAB) || c == LJS(SP))
+        SETSTAT(WHITE_SPACE)
+      else if (is_identifier_start(c))
+        SETSTAT(IDENT)
+      else if (is_punctuator_single(c))
+      {
+        return punctuator_finish(pos);
+      }
+      else if (is_punctuator_waiteq(c))
+        SETSTAT(PUNCT_WAITEQ)
+      else if (is_punctuator_eqstart(c))
+        SETSTAT(PUNCT_EQSTART)
+      else if (is_punctuator_repeat(c))
+        SETSTAT(PUNCT_REPEAT)
+      else if (is_punctuator_part(c))
+        SETSTAT(PUNCT)
+      else
+      {
+        nt_error(pos);
+      }
+      break;
+    case IDENT:
+      c = nt_get_char(pos++);
+      // printf("identifier: %c\n", c);
+      if (is_identifier_part(c))
+        NEXTCHAR
+      else
+      {
+        return identifier_finish(--pos);
+      }
+      break;
+    case PUNCT:
+      c = nt_get_char(pos++);
+      if (is_punctuator_part(c))
+        NEXTCHAR
+      else
+      {
+        return punctuator_finish(--pos);
+      }
+      break;
+    case PUNCT_WAITEQ:
+      c = nt_get_char(pos++);
+      if (c == LJS(EQ)[0])
+        NEXTCHAR
+      else
+      {
+        return punctuator_finish(--pos);
+      }
+      break;
+    case PUNCT_EQSTART:
+      c = nt_get_char(pos++);
+      if (c == LJS(GT)[0] || c == LJS(EQ)[0])
+        NEXTCHAR
+      else
+      {
+        return punctuator_finish(--pos);
+      }
+    case PUNCT_REPEAT:
+      c = nt_get_char(pos++);
+      if (is_punctuator_repeat(c) || c == LJS(EQ)[0])
+        NEXTCHAR
+      else
+      {
+        return punctuator_finish(--pos);
+      }
+    }
+  }
 }
