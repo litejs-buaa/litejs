@@ -1,4 +1,4 @@
 #!/bin/zsh
-/root/Code/quickjs/qjs ./white.js.txt
+/root/Code/GitRepo_JSVM/quickjs/qjs ./white.js.txt
 
 gcc template.c && ./a.out

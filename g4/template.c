@@ -18,6 +18,11 @@ char get_char(int position)
   return source_code[position];
 }
 
+const char *translate(int value)
+{
+  return STAT_STRING[value];
+}
+
 void nt_init()
 {
   token_loc = 0;
@@ -30,7 +35,10 @@ void nt_init()
   status = INITIAL;
 }
 
-void nt_error();
+void nt_error(int pos)
+{
+  printf("SYNTAX ERROR as %d\n", pos);
+}
 
 int is_letter(char c)
 {
@@ -83,14 +91,48 @@ int is_identifier_part(char c)
 
 int is_punctuator_part(char c)
 {
-  char *charset = LJS(PUNCTUATOR_CHARS);
+  const char *charset = LJS(PUNCTUATOR_CHARS);
   for (int i = 0; i < strlen(charset); ++i)
     if (c == charset[i])
       return 1;
   return 0;
 }
 
+int is_punctuator_single(char c)
+{
+  const char *charset = LJS(PUNCTUATOR_SINGLE_CHARS);
+  for (int i = 0; i < strlen(charset); ++i)
+    if (c == charset[i])
+      return 1;
+  return 0;
+}
+
+__LJS_NT_Return *identifier_finish(int pos);
+__LJS_NT_Return *punctuator_finish(int pos);
+__LJS_NT_Return *next_token(int position);
 __LJS_NT_Return *finish(int new_pos);
+
+int main()
+{
+
+  FILE *fp = fopen("white.js.txt", "r");
+  fgets(source_code, 1024, (FILE *)fp);
+
+  int position = 0;
+  int len = strlen(source_code);
+  while (position < len)
+  {
+    __LJS_NT_Return *res = next_token(position);
+    position = res->position;
+    // printf("position: %d\n", position);
+    if (res->token->type == WHITE_SPACE)
+      continue;
+    printf("[%2d]%6s: '%s'\n", position, translate(res->token->type), res->token->content);
+  }
+
+  fclose(fp);
+  return 0;
+}
 
 __LJS_NT_Return *identifier_finish(int pos)
 {
@@ -249,7 +291,7 @@ __LJS_NT_Return *identifier_finish(int pos)
   }
   else
   {
-    status = IDENTIFIER;
+    status = IDENT;
   }
   return finish(pos);
 }
@@ -403,6 +445,62 @@ __LJS_NT_Return *punctuator_finish(int pos)
   {
     status = PLUSEQ;
   }
+  else if (strcmp(content, LJS(MINUSEQ)) == 0)
+  {
+    status = MINUSEQ;
+  }
+  else if (strcmp(content, LJS(TIMESEQ)) == 0)
+  {
+    status = TIMESEQ;
+  }
+  else if (strcmp(content, LJS(PERCENTEQ)) == 0)
+  {
+    status = PERCENTEQ;
+  }
+  else if (strcmp(content, LJS(TIME2SEQ)) == 0)
+  {
+    status = TIME2SEQ;
+  }
+  else if (strcmp(content, LJS(LSHIFTEQ)) == 0)
+  {
+    status = LSHIFTEQ;
+  }
+  else if (strcmp(content, LJS(RSHIFTEQ)) == 0)
+  {
+    status = RSHIFTEQ;
+  }
+  else if (strcmp(content, LJS(GT3EQ)) == 0)
+  {
+    status = GT3EQ;
+  }
+  else if (strcmp(content, LJS(AMPEREQ)) == 0)
+  {
+    status = AMPEREQ;
+  }
+  else if (strcmp(content, LJS(PIPEEQ)) == 0)
+  {
+    status = PIPEEQ;
+  }
+  else if (strcmp(content, LJS(CAROTEQ)) == 0)
+  {
+    status = CAROTEQ;
+  }
+  else if (strcmp(content, LJS(ARROW)) == 0)
+  {
+    status = ARROW;
+  }
+  else if (strcmp(content, LJS(DIV)) == 0)
+  {
+    status = DIV;
+  }
+  else if (strcmp(content, LJS(DIVEQ)) == 0)
+  {
+    status = DIVEQ;
+  }
+  else if (strcmp(content, LJS(RBRACE)) == 0)
+  {
+    status = RBRACE;
+  }
   else
   {
     nt_error(pos);
@@ -430,8 +528,12 @@ __LJS_NT_Return *next_token(int position)
       }
       else if (is_identifier_start(c))
       {
-        status = IDENTIFIER;
+        status = IDENT;
         continue;
+      }
+      else if (is_punctuator_single(c))
+      {
+        return punctuator_finish(pos);
       }
       else if (is_punctuator_part(c))
       {
@@ -443,7 +545,7 @@ __LJS_NT_Return *next_token(int position)
         nt_error(pos);
       }
       break;
-    case IDENTIFIER:
+    case IDENT:
       c = get_char(pos++);
       // printf("identifier: %c\n", c);
       if (is_identifier_part(c))
@@ -483,48 +585,4 @@ __LJS_NT_Return *finish(int new_pos)
   res->token = token;
   res->position = new_pos;
   return res;
-}
-
-char *translate(int value)
-{
-  switch (value)
-  {
-  case WHITE_SPACE:
-    return "WHITE_SPACE";
-  case AWAIT:
-    return "AWAIT";
-  case BREAK:
-    return "BREAK";
-  case IDENTIFIER:
-    return "IDENTIFIER";
-  default:
-    return "TOKEN";
-  }
-}
-
-void nt_error(int pos)
-{
-  printf("SYNTAX ERROR as %d\n", pos);
-}
-
-int main()
-{
-
-  FILE *fp = fopen("white.js.txt", "r");
-  fgets(source_code, 1024, (FILE *)fp);
-
-  int position = 0;
-  int len = strlen(source_code);
-  while (position < len)
-  {
-    __LJS_NT_Return *res = next_token(position);
-    position = res->position;
-    // printf("position: %d\n", position);
-    if (res->token->type == WHITE_SPACE)
-      continue;
-    printf("%s: '%s'\n", translate(res->token->type), res->token->content);
-  }
-
-  fclose(fp);
-  return 0;
 }
