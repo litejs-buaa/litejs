@@ -4,3 +4,4 @@ Tokenizer: progress
 - keyword
 - punctuator
 - line terminator
+- string literals

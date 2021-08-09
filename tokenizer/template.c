@@ -571,6 +571,10 @@ __LJS_NT_Return *next_token(int position)
         SETSTAT(CR)
       else if (c == LJS(LF))
         SETSTAT(LF)
+      else if (c == LJS(SINGLEQUOTE))
+        SETSTAT(SINGLEQUOTE)
+      else if (c == LJS(DOUBLEQUOTE))
+        SETSTAT(DOUBLEQUOTE)
       else if (is_identifier_start(c))
         SETSTAT(IDENT)
       else if (is_punctuator_single(c))
@@ -649,6 +653,24 @@ __LJS_NT_Return *next_token(int position)
     case LF:
       status = NEWLINE;
       return finish(pos);
+    case SINGLEQUOTE:
+      c = nt_get_char(pos++);
+      if (c != LJS(SINGLEQUOTE))
+        NEXTCHAR
+      else
+      {
+        status = STRINGLITERAL;
+        return finish(pos);
+      }
+    case DOUBLEQUOTE:
+      c = nt_get_char(pos++);
+      if (c != LJS(DOUBLEQUOTE))
+        NEXTCHAR
+      else
+      {
+        status = STRINGLITERAL;
+        return finish(pos);
+      }
     }
   }
 }

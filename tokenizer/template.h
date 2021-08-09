@@ -6,6 +6,10 @@
   STAT(CR)                 \
   STAT(LF)                 \
   STAT(NEWLINE)            \
+  STAT(SINGLEQUOTE)        \
+  STAT(DOUBLEQUOTE)        \
+  STAT(STRINGLITERAL)      \
+  STAT(NUMERICLITERAL)     \
   STAT(IDENT)              \
   STAT(PUNCT)              \
   STAT(PUNCT_WAITEQ)       \
@@ -113,6 +117,8 @@
 #define __LJS_UNDERSCORE ('_')
 #define __LJS_CR ('\r')
 #define __LJS_LF ('\n')
+#define __LJS_SINGLEQUOTE ('\'')
+#define __LJS_DOUBLEQUOTE ('"')
 
 #define __LJS_LBRACE ("{")
 #define __LJS_LBRACK ("(")
