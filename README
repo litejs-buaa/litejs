@@ -1,1 +1,6 @@
-INIT
+Tokenizer: progress
+- white space
+- identifier
+- keyword
+- punctuator
+- line terminator

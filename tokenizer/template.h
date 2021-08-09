@@ -3,11 +3,17 @@
 #define FOREACH_STAT(STAT) \
   STAT(INITIAL)            \
   STAT(WHITE_SPACE)        \
+  STAT(CR)                 \
+  STAT(LF)                 \
+  STAT(NEWLINE)            \
   STAT(IDENT)              \
   STAT(PUNCT)              \
   STAT(PUNCT_WAITEQ)       \
   STAT(PUNCT_EQSTART)      \
   STAT(PUNCT_REPEAT)       \
+  STAT(_NULL)              \
+  STAT(_TRUE)              \
+  STAT(_FALSE)             \
   STAT(AWAIT)              \
   STAT(BREAK)              \
   STAT(CASE)               \
@@ -23,7 +29,6 @@
   STAT(ENUM)               \
   STAT(EXPORT)             \
   STAT(EXTENDS)            \
-  STAT(FALSE)              \
   STAT(FINALLY)            \
   STAT(FOR)                \
   STAT(FUNCTION)           \
@@ -32,13 +37,11 @@
   STAT(IN)                 \
   STAT(INSTANCEOF)         \
   STAT(NEW)                \
-  STAT(_NULL)              \
   STAT(RETURN)             \
   STAT(SUPER)              \
   STAT(SWITCH)             \
   STAT(THIS)               \
   STAT(THROW)              \
-  STAT(TRUE)               \
   STAT(TRY)                \
   STAT(TYPEOF)             \
   STAT(VAR)                \
@@ -108,6 +111,8 @@
 #define __LJS_SP (' ')
 #define __LJS_DOLLAR ('$')
 #define __LJS_UNDERSCORE ('_')
+#define __LJS_CR ('\r')
+#define __LJS_LF ('\n')
 
 #define __LJS_LBRACE ("{")
 #define __LJS_LBRACK ("(")

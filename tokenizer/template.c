@@ -37,7 +37,7 @@ void nt_init()
 
 void nt_error(int pos)
 {
-  printf("SYNTAX ERROR as %d\n", pos);
+  printf("SYNTAX ERROR at %d\n", pos);
 }
 
 int is_letter(char c)
@@ -137,9 +137,9 @@ __LJS_NT_Return *finish(int new_pos);
 
 int main()
 {
-
   FILE *fp = fopen("white.js.txt", "r");
-  fgets(source_code, 1024, (FILE *)fp);
+  fread(source_code, 1024, sizeof(char), (FILE *)fp);
+  // fgets(source_code, 1024, (FILE *)fp);
 
   int position = 0;
   int len = strlen(source_code);
@@ -149,6 +149,8 @@ int main()
     position = res->position;
     // printf("position: %d\n", position);
     if (res->token->type == WHITE_SPACE)
+      continue;
+    if (res->token->type == NEWLINE)
       continue;
     printf("[%2d]%6s: '%s'\n", position, translate(res->token->type), res->token->content);
   }
@@ -222,7 +224,7 @@ __LJS_NT_Return *identifier_finish(int pos)
   }
   else if (strcmp(content, "false") == 0)
   {
-    status = FALSE;
+    status = _FALSE;
   }
   else if (strcmp(content, "finally") == 0)
   {
@@ -282,7 +284,7 @@ __LJS_NT_Return *identifier_finish(int pos)
   }
   else if (strcmp(content, "true") == 0)
   {
-    status = TRUE;
+    status = _TRUE;
   }
   else if (strcmp(content, "try") == 0)
   {
@@ -387,6 +389,10 @@ __LJS_NT_Return *punctuator_finish(int pos)
   else if (strcmp(content, LJS(NOTEQ2)) == 0)
   {
     status = NOTEQ2;
+  }
+  else if (strcmp(content, LJS(PLUS)) == 0)
+  {
+    status = PLUS;
   }
   else if (strcmp(content, LJS(MINUS)) == 0)
   {
@@ -553,12 +559,18 @@ __LJS_NT_Return *next_token(int position)
     {
     case WHITE_SPACE:
       return finish(pos);
+    case NEWLINE:
+      return finish(pos);
     case INITIAL:
       c = nt_get_char(pos++);
       content[content_pos++] = c;
       // printf("c = %c\n", c);
       if (c == LJS(TAB) || c == LJS(SP))
         SETSTAT(WHITE_SPACE)
+      else if (c == LJS(CR))
+        SETSTAT(CR)
+      else if (c == LJS(LF))
+        SETSTAT(LF)
       else if (is_identifier_start(c))
         SETSTAT(IDENT)
       else if (is_punctuator_single(c))
@@ -622,6 +634,21 @@ __LJS_NT_Return *next_token(int position)
       {
         return punctuator_finish(--pos);
       }
+    case CR:
+      c = nt_get_char(pos++);
+      if (c == LJS(LF))
+      {
+        status = NEWLINE;
+        return finish(pos);
+      }
+      else
+      {
+        status = NEWLINE;
+        return finish(--pos);
+      }
+    case LF:
+      status = NEWLINE;
+      return finish(pos);
     }
   }
 }
