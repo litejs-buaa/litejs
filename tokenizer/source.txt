@@ -5,3 +5,14 @@ for (var index = 0; index <= 9; index++) {
     $ERROR('#' + character[index] + ' ');
   }
 }
+
+
+class test{
+    constructor(){}
+}
+
+var big_num = 9999999999999n
+
+var float_num = 1.1e-5 + 1.00000001
+
+var regexp_str = /asd/

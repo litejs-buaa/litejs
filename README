@@ -6,3 +6,5 @@ Tokenizer: progress
 - line terminator
 * string literals
 * numeric literals
+? template
+? regexp
