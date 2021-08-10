@@ -8,8 +8,9 @@
   STAT(NEWLINE)            \
   STAT(SINGLEQUOTE)        \
   STAT(DOUBLEQUOTE)        \
-  STAT(STRINGLITERAL)      \
-  STAT(NUMERICLITERAL)     \
+  STAT(STRING)             \
+  STAT(NUMERIC)            \
+  STAT(NUMBER)             \
   STAT(IDENT)              \
   STAT(PUNCT)              \
   STAT(PUNCT_WAITEQ)       \
@@ -54,10 +55,10 @@
   STAT(WITH)               \
   STAT(YIELD)              \
   STAT(LBRACE)             \
+  STAT(LPAREN)             \
+  STAT(RPAREN)             \
   STAT(LBRACK)             \
   STAT(RBRACK)             \
-  STAT(LBRACKET)           \
-  STAT(RBRACKET)           \
   STAT(DOT)                \
   STAT(DOT3)               \
   STAT(SEMI)               \
@@ -121,10 +122,10 @@
 #define __LJS_DOUBLEQUOTE ('"')
 
 #define __LJS_LBRACE ("{")
-#define __LJS_LBRACK ("(")
-#define __LJS_RBRACK (")")
-#define __LJS_LBRACKET ("[")
-#define __LJS_RBRACKET ("]")
+#define __LJS_LPAREN ("(")
+#define __LJS_RPAREN (")")
+#define __LJS_LBRACK ("[")
+#define __LJS_RBRACK ("]")
 #define __LJS_DOT (".")
 #define __LJS_DOT3 ("...")
 #define __LJS_SEMI (";")

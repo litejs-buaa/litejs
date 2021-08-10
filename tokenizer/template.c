@@ -137,7 +137,7 @@ __LJS_NT_Return *finish(int new_pos);
 
 int main()
 {
-  FILE *fp = fopen("white.js.txt", "r");
+  FILE *fp = fopen("source.txt", "r");
   fread(source_code, 1024, sizeof(char), (FILE *)fp);
   // fgets(source_code, 1024, (FILE *)fp);
 
@@ -152,7 +152,7 @@ int main()
       continue;
     if (res->token->type == NEWLINE)
       continue;
-    printf("[%2d]%6s: '%s'\n", position, translate(res->token->type), res->token->content);
+    printf("[%3d]%6s: '%s'\n", position, translate(res->token->type), res->token->content);
   }
 
   fclose(fp);
@@ -326,6 +326,14 @@ __LJS_NT_Return *punctuator_finish(int pos)
   // printf("content = %s\n", content);
   if (strcmp(content, LJS(LBRACE)) == 0)
     status = LBRACE;
+  else if (strcmp(content, LJS(LPAREN)) == 0)
+  {
+    status = LPAREN;
+  }
+  else if (strcmp(content, LJS(RPAREN)) == 0)
+  {
+    status = RPAREN;
+  }
   else if (strcmp(content, LJS(LBRACK)) == 0)
   {
     status = LBRACK;
@@ -333,14 +341,6 @@ __LJS_NT_Return *punctuator_finish(int pos)
   else if (strcmp(content, LJS(RBRACK)) == 0)
   {
     status = RBRACK;
-  }
-  else if (strcmp(content, LJS(LBRACKET)) == 0)
-  {
-    status = LBRACKET;
-  }
-  else if (strcmp(content, LJS(RBRACKET)) == 0)
-  {
-    status = RBRACKET;
   }
   else if (strcmp(content, LJS(DOT)) == 0)
   {
@@ -572,15 +572,23 @@ __LJS_NT_Return *next_token(int position)
       else if (c == LJS(LF))
         SETSTAT(LF)
       else if (c == LJS(SINGLEQUOTE))
-        SETSTAT(SINGLEQUOTE)
+      {
+        status = SINGLEQUOTE;
+        content[--content_pos] = '\0';
+        continue;
+      }
       else if (c == LJS(DOUBLEQUOTE))
-        SETSTAT(DOUBLEQUOTE)
+      {
+        status = DOUBLEQUOTE;
+        content[--content_pos] = '\0';
+        continue;
+      }
+      else if (is_digit(c))
+        SETSTAT(NUMERIC)
       else if (is_identifier_start(c))
         SETSTAT(IDENT)
       else if (is_punctuator_single(c))
-      {
         return punctuator_finish(pos);
-      }
       else if (is_punctuator_waiteq(c))
         SETSTAT(PUNCT_WAITEQ)
       else if (is_punctuator_eqstart(c))
@@ -590,9 +598,7 @@ __LJS_NT_Return *next_token(int position)
       else if (is_punctuator_part(c))
         SETSTAT(PUNCT)
       else
-      {
         nt_error(pos);
-      }
       break;
     case IDENT:
       c = nt_get_char(pos++);
@@ -659,7 +665,7 @@ __LJS_NT_Return *next_token(int position)
         NEXTCHAR
       else
       {
-        status = STRINGLITERAL;
+        status = STRING;
         return finish(pos);
       }
     case DOUBLEQUOTE:
@@ -668,8 +674,17 @@ __LJS_NT_Return *next_token(int position)
         NEXTCHAR
       else
       {
-        status = STRINGLITERAL;
+        status = STRING;
         return finish(pos);
+      }
+    case NUMERIC:
+      c = nt_get_char(pos++);
+      if (is_digit(c))
+        NEXTCHAR
+      else
+      {
+        status = NUMBER;
+        return finish(--pos);
       }
     }
   }
