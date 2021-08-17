@@ -9,7 +9,6 @@
   STAT(SINGLEQUOTE)        \
   STAT(DOUBLEQUOTE)        \
   STAT(STRING)             \
-  STAT(NUMERIC)            \
   STAT(NUMBER)             \
   STAT(IDENT)              \
   STAT(PUNCT)              \
@@ -175,6 +174,10 @@
 #define __LJS_DIV ("/")
 #define __LJS_DIVEQ ("/=")
 #define __LJS_RBRACE ("}")
+
+#define __LJS_e ('e')
+#define __LJS_E ('E')
+#define __LJS_BIGINTSUFFIX ('n')
 
 #define NEXTCHAR                \
   {                             \

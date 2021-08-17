@@ -130,6 +130,7 @@ int is_punctuator_repeat(char c)
   return 0;
 }
 
+__LJS_NT_Return *numeric_finish(int pos);
 __LJS_NT_Return *identifier_finish(int pos);
 __LJS_NT_Return *punctuator_finish(int pos);
 __LJS_NT_Return *next_token(int position);
@@ -157,6 +158,36 @@ int main()
 
   fclose(fp);
   return 0;
+}
+
+__LJS_NT_Return *numeric_finish(int pos)
+{
+  status = NUMBER;
+  int dot_flag = 0;
+  for (int i = 0; i < strlen(content); ++i)
+    if (content[i] == LJS(DOT)[0])
+      dot_flag = 1;
+  for (int i = 0; i < strlen(content); ++i)
+    if (content[i] == 'n')
+      dot_flag = 2;
+
+  if (dot_flag == 0)
+  {
+    long long v;
+    sscanf(content, "%lld", &v);
+    printf("-----NV(llong): %lld\n", v);
+  }
+  else if (dot_flag == 1)
+  {
+    double v;
+    sscanf(content, "%lf", &v);
+    printf("-----NV(double): %.10lf\n", v);
+  }
+  else if (dot_flag == 2)
+  {
+    printf("-----NV(big): %s\n", content);
+  }
+  return finish(pos);
 }
 
 __LJS_NT_Return *identifier_finish(int pos)
@@ -557,8 +588,8 @@ __LJS_NT_Return *next_token(int position)
   {
     switch (status)
     {
-    case WHITE_SPACE:
-      return finish(pos);
+    // case WHITE_SPACE:
+    //   return finish(pos);
     case NEWLINE:
       return finish(pos);
     case INITIAL:
@@ -566,7 +597,10 @@ __LJS_NT_Return *next_token(int position)
       content[content_pos++] = c;
       // printf("c = %c\n", c);
       if (c == LJS(TAB) || c == LJS(SP))
-        SETSTAT(WHITE_SPACE)
+      {
+        --content_pos;
+        continue;
+      }
       else if (c == LJS(CR))
         SETSTAT(CR)
       else if (c == LJS(LF))
@@ -583,8 +617,39 @@ __LJS_NT_Return *next_token(int position)
         content[--content_pos] = '\0';
         continue;
       }
+      else if (c == LJS(DOT)[0])
+      {
+      DOT_STAT:
+        while (is_digit(c = nt_get_char(pos++)))
+          content[content_pos++] = c;
+
+        if (c == LJS(e) || c == LJS(E))
+        {
+          content[content_pos++] = LJS(e);
+          char ind = nt_get_char(pos++);
+          if (ind == LJS(PLUS)[0] || ind == LJS(MINUS)[0])
+            content[content_pos++] = ind;
+          else
+            --pos;
+
+          while (is_digit(c = nt_get_char(pos++)))
+            content[content_pos++] = c;
+        }
+        return numeric_finish(--pos);
+      }
       else if (is_digit(c))
-        SETSTAT(NUMERIC)
+      {
+        while (is_digit(c = nt_get_char(pos++)))
+          content[content_pos++] = c;
+        if (c == LJS(DOT)[0])
+        {
+          content[content_pos++] = c;
+          goto DOT_STAT;
+        }
+        else if (c == LJS(BIGINTSUFFIX))
+          pos++, content[content_pos++] = c;
+        return numeric_finish(--pos);
+      }
       else if (is_identifier_start(c))
         SETSTAT(IDENT)
       else if (is_punctuator_single(c))
@@ -638,7 +703,7 @@ __LJS_NT_Return *next_token(int position)
       }
     case PUNCT_REPEAT:
       c = nt_get_char(pos++);
-      if (is_punctuator_repeat(c) || c == LJS(EQ)[0])
+      if (c == content[content_pos - 1] || c == LJS(EQ)[0])
         NEXTCHAR
       else
       {
@@ -676,15 +741,6 @@ __LJS_NT_Return *next_token(int position)
       {
         status = STRING;
         return finish(pos);
-      }
-    case NUMERIC:
-      c = nt_get_char(pos++);
-      if (is_digit(c))
-        NEXTCHAR
-      else
-      {
-        status = NUMBER;
-        return finish(--pos);
       }
     }
   }
