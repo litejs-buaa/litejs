@@ -61,6 +61,15 @@ int is_digit(char c)
   return c >= '0' && c <= '9';
 }
 
+int is_non_decimal(char c)
+{
+  const char *charset = LJS(NON_DECIMAL_CHARS);
+  for (int i = 0; i < strlen(charset); ++i)
+    if (c == charset[i])
+      return 1;
+  return 0;
+}
+
 int is_identifier_start(char c)
 {
   if (c == LJS(DOLLAR) || c == LJS(UNDERSCORE) || is_letter(c))
@@ -163,29 +172,38 @@ int main()
 __LJS_NT_Return *numeric_finish(int pos)
 {
   status = NUMBER;
-  int dot_flag = 0;
-  for (int i = 0; i < strlen(content); ++i)
-    if (content[i] == LJS(DOT)[0])
-      dot_flag = 1;
-  for (int i = 0; i < strlen(content); ++i)
-    if (content[i] == 'n')
-      dot_flag = 2;
-
-  if (dot_flag == 0)
+  int num_type = 0;
+  if (content[strlen(content) - 1] == 'n')
+    num_type = 1;
+  else
+  {
+    for (int i = 0; i < strlen(content); ++i)
+      if (content[i] == LJS(DOT)[0])
+        num_type = 2;
+  }
+  else
+  {
+    if (is_non_decimal(content[1]))
+      num_type = 3;
+  }
+  if (num_type == 0)
   {
     long long v;
     sscanf(content, "%lld", &v);
     printf("-----NV(llong): %lld\n", v);
   }
-  else if (dot_flag == 1)
+  else if (num_type == 1)
+  {
+    printf("-----NV(big): %s\n", content);
+  }
+  else if (num_type == 2)
   {
     double v;
     sscanf(content, "%lf", &v);
     printf("-----NV(double): %.10lf\n", v);
   }
-  else if (dot_flag == 2)
+  else if (num_type == 3)
   {
-    printf("-----NV(big): %s\n", content);
   }
   return finish(pos);
 }
@@ -639,9 +657,16 @@ __LJS_NT_Return *next_token(int position)
       }
       else if (is_digit(c))
       {
+        int non_decimal = 0;
+        if (c == LJS(NONDECIMALPREFIX))
+          if (is_non_decimal(c = nt_get_char(pos++)))
+          {
+            content[content_pos++] = c;
+            non_decimal = 1;
+          }
         while (is_digit(c = nt_get_char(pos++)))
           content[content_pos++] = c;
-        if (c == LJS(DOT)[0])
+        if (c == LJS(DOT)[0] && non_decimal == 0)
         {
           content[content_pos++] = c;
           goto DOT_STAT;
