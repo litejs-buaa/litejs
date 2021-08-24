@@ -1,7 +1,7 @@
 import subprocess
 
 QJS = 'qjs_debug ./source.txt'
-LITEJS = 'gcc template.c && ./a.out'
+LITEJS = 'gcc template.c -lm && ./a.out'
 
 CMD1 = LITEJS
 CMD2 = QJS

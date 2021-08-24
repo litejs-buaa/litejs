@@ -12,7 +12,7 @@ class test{
 }
 
 var big_num = 9999999999999n
-
 var float_num = 1.1e-5 + 1.00000001
-
+let more_num = 1. + .02 +.03e8 +4.e-2
+let non_decimal_num = 0b00101010+0O777-0xAAAE+100-0X1+0B0-0o0 
 var regexp_str = /asd/

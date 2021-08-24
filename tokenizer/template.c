@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <uchar.h>
 #include <memory.h>
+#include <math.h>
 #include "template.h"
 
 char source_code[1024];
@@ -59,6 +60,26 @@ int is_letter(char c)
 int is_digit(char c)
 {
   return c >= '0' && c <= '9';
+}
+
+int is_digit_or_abcdef(char c)
+{
+  for (int i = 'a'; i <= 'f'; ++i)
+    if (c == i)
+      return 1;
+  for (int i = 'A'; i <= 'F'; ++i)
+    if (c == i)
+      return 1;
+  return is_digit(c);
+}
+
+int is_non_decimal(char c)
+{
+  const char *charset = LJS(NON_DECIMAL_CHARS);
+  for (int i = 0; i < strlen(charset); ++i)
+    if (c == charset[i])
+      return 1;
+  return 0;
 }
 
 int is_identifier_start(char c)
@@ -187,6 +208,20 @@ int parse_escape(int pos, int *next_pos)
   return c;
 }
 
+long long convertBinaryToDecimal(long long n)
+{
+  long long decimalNumber = 0, i = 0, remainder;
+  while (n != 0)
+  {
+    remainder = n % 10;
+    n /= 10;
+    decimalNumber += remainder * pow(2, i);
+    ++i;
+  }
+  return decimalNumber;
+}
+
+__LJS_NT_Return *numeric_finish(int pos);
 __LJS_NT_Return *identifier_finish(int pos);
 __LJS_NT_Return *punctuator_finish(int pos);
 __LJS_NT_Return *next_token(int position);
@@ -214,6 +249,54 @@ int main()
 
   fclose(fp);
   return 0;
+}
+
+__LJS_NT_Return *numeric_finish(int pos)
+{
+  double dv;
+  long long llv;
+
+  status = NUMBER;
+  if (content[strlen(content) - 1] == 'n')
+    goto big_int;
+
+  for (int i = 0; i < strlen(content); ++i)
+    if (content[i] == LJS(DOT)[0])
+      goto fraction;
+
+  if (is_non_decimal(content[1]))
+    goto non_dec_integer;
+
+  goto dec_integer;
+
+big_int:
+  printf("-----NV(big_int): %s\n", content);
+  goto ret;
+
+fraction:
+  sscanf(content, "%lf", &dv);
+  printf("-----NV(double): %.10lf\n", dv);
+  goto ret;
+
+non_dec_integer:
+  if (strstr(content, "0x") || strstr(content, "0X"))
+    sscanf(content, "%llx", &llv);
+  else if (strstr(content, "0o") || strstr(content, "0O"))
+    sscanf(&content[2], "%llo", &llv);
+  else if (strstr(content, "0b") || strstr(content, "0B"))
+  {
+    sscanf(&content[2], "%lld", &llv);
+    llv = convertBinaryToDecimal(llv);
+  }
+  printf("-----NV(long long): %lld\n", llv);
+  goto ret;
+
+dec_integer:
+  sscanf(content, "%lld", &llv);
+  printf("-----NV(long long): %lld\n", llv);
+
+ret:
+  return finish(pos);
 }
 
 __LJS_NT_Return *identifier_finish(int pos)
@@ -614,8 +697,8 @@ __LJS_NT_Return *next_token(int position)
   {
     switch (status)
     {
-    case WHITE_SPACE:
-      return finish(pos);
+    // case WHITE_SPACE:
+    //   return finish(pos);
     case NEWLINE:
       return finish(pos);
     case INITIAL:
@@ -623,7 +706,10 @@ __LJS_NT_Return *next_token(int position)
       content[content_pos++] = c;
       // printf("c = %c\n", c);
       if (c == LJS(TAB) || c == LJS(SP))
-        SETSTAT(WHITE_SPACE)
+      {
+        --content_pos;
+        continue;
+      }
       else if (c == LJS(CR))
         SETSTAT(CR)
       else if (c == LJS(LF))
@@ -640,8 +726,46 @@ __LJS_NT_Return *next_token(int position)
         content[--content_pos] = '\0';
         continue;
       }
+      else if (c == LJS(DOT)[0])
+      {
+      DOT_STAT:
+        while (is_digit(c = nt_get_char(pos++)))
+          content[content_pos++] = c;
+
+        if (c == LJS(e) || c == LJS(E))
+        {
+          content[content_pos++] = LJS(e);
+          char ind = nt_get_char(pos++);
+          if (ind == LJS(PLUS)[0] || ind == LJS(MINUS)[0])
+            content[content_pos++] = ind;
+          else
+            --pos;
+
+          while (is_digit(c = nt_get_char(pos++)))
+            content[content_pos++] = c;
+        }
+        return numeric_finish(--pos);
+      }
       else if (is_digit(c))
-        SETSTAT(NUMERIC)
+      {
+        int non_decimal = 0;
+        if (c == LJS(NONDECIMALPREFIX))
+          if (is_non_decimal(c = nt_get_char(pos++)))
+          {
+            content[content_pos++] = c;
+            non_decimal = 1;
+          }
+        while (is_digit_or_abcdef(c = nt_get_char(pos++)))
+          content[content_pos++] = c;
+        if (c == LJS(DOT)[0] && non_decimal == 0)
+        {
+          content[content_pos++] = c;
+          goto DOT_STAT;
+        }
+        else if (c == LJS(BIGINTSUFFIX))
+          pos++, content[content_pos++] = c;
+        return numeric_finish(--pos);
+      }
       else if (is_identifier_start(c))
         SETSTAT(IDENT)
       else if (is_punctuator_single(c))
@@ -695,7 +819,7 @@ __LJS_NT_Return *next_token(int position)
       }
     case PUNCT_REPEAT:
       c = nt_get_char(pos++);
-      if (is_punctuator_repeat(c) || c == LJS(EQ)[0])
+      if (c == content[content_pos - 1] || c == LJS(EQ)[0])
         NEXTCHAR
       else
       {
@@ -772,15 +896,6 @@ __LJS_NT_Return *next_token(int position)
       {
         status = STRING;
         return finish(pos);
-      }
-    case NUMERIC:
-      c = nt_get_char(pos++);
-      if (is_digit(c))
-        NEXTCHAR
-      else
-      {
-        status = NUMBER;
-        return finish(--pos);
       }
     }
   }

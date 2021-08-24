@@ -9,7 +9,6 @@
   STAT(SINGLEQUOTE)        \
   STAT(DOUBLEQUOTE)        \
   STAT(STRING)             \
-  STAT(NUMERIC)            \
   STAT(NUMBER)             \
   STAT(IDENT)              \
   STAT(PUNCT)              \
@@ -176,6 +175,11 @@
 #define __LJS_DIVEQ ("/=")
 #define __LJS_RBRACE ("}")
 
+#define __LJS_e ('e')
+#define __LJS_E ('E')
+#define __LJS_BIGINTSUFFIX ('n')
+#define __LJS_NONDECIMALPREFIX ('0')
+
 #define NEXTCHAR                \
   {                             \
     content[content_pos++] = c; \
@@ -192,6 +196,7 @@ const char *__LJS_PUNCTUATOR_WAITEQ_CHARS = "!%^/";
 const char *__LJS_PUNCTUATOR_EQSTART_CHARS = "=";
 const char *__LJS_PUNCTUATOR_REPEAT_CHARS = ".<>+-*&|?";
 const char *__LJS_PUNCTUATOR_CHARS = "{([])}.;,<>=!+-*%&|^~?:/";
+const char *__LJS_NON_DECIMAL_CHARS = "bBoOxX";
 
 enum STAT_ENUM
 {
