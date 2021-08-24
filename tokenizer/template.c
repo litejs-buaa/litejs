@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <uchar.h>
 #include <memory.h>
+#include <math.h>
 #include "template.h"
 
 char source_code[1024];
@@ -59,6 +60,17 @@ int is_letter(char c)
 int is_digit(char c)
 {
   return c >= '0' && c <= '9';
+}
+
+int is_digit_or_abcdef(char c)
+{
+  for (int i = 'a'; i <= 'f'; ++i)
+    if (c == i)
+      return 1;
+  for (int i = 'A'; i <= 'F'; ++i)
+    if (c == i)
+      return 1;
+  return is_digit(c);
 }
 
 int is_non_decimal(char c)
@@ -139,6 +151,19 @@ int is_punctuator_repeat(char c)
   return 0;
 }
 
+long long convertBinaryToDecimal(long long n)
+{
+  long long decimalNumber = 0, i = 0, remainder;
+  while (n != 0)
+  {
+    remainder = n % 10;
+    n /= 10;
+    decimalNumber += remainder * pow(2, i);
+    ++i;
+  }
+  return decimalNumber;
+}
+
 __LJS_NT_Return *numeric_finish(int pos);
 __LJS_NT_Return *identifier_finish(int pos);
 __LJS_NT_Return *punctuator_finish(int pos);
@@ -171,40 +196,49 @@ int main()
 
 __LJS_NT_Return *numeric_finish(int pos)
 {
+  double dv;
+  long long llv;
+
   status = NUMBER;
-  int num_type = 0;
   if (content[strlen(content) - 1] == 'n')
-    num_type = 1;
-  else
+    goto big_int;
+
+  for (int i = 0; i < strlen(content); ++i)
+    if (content[i] == LJS(DOT)[0])
+      goto fraction;
+
+  if (is_non_decimal(content[1]))
+    goto non_dec_integer;
+
+  goto dec_integer;
+
+big_int:
+  printf("-----NV(big_int): %s\n", content);
+  goto ret;
+
+fraction:
+  sscanf(content, "%lf", &dv);
+  printf("-----NV(double): %.10lf\n", dv);
+  goto ret;
+
+non_dec_integer:
+  if (strstr(content, "0x") || strstr(content, "0X"))
+    sscanf(content, "%llx", &llv);
+  else if (strstr(content, "0o") || strstr(content, "0O"))
+    sscanf(&content[2], "%llo", &llv);
+  else if (strstr(content, "0b") || strstr(content, "0B"))
   {
-    for (int i = 0; i < strlen(content); ++i)
-      if (content[i] == LJS(DOT)[0])
-        num_type = 2;
+    sscanf(&content[2], "%lld", &llv);
+    llv = convertBinaryToDecimal(llv);
   }
-  else
-  {
-    if (is_non_decimal(content[1]))
-      num_type = 3;
-  }
-  if (num_type == 0)
-  {
-    long long v;
-    sscanf(content, "%lld", &v);
-    printf("-----NV(llong): %lld\n", v);
-  }
-  else if (num_type == 1)
-  {
-    printf("-----NV(big): %s\n", content);
-  }
-  else if (num_type == 2)
-  {
-    double v;
-    sscanf(content, "%lf", &v);
-    printf("-----NV(double): %.10lf\n", v);
-  }
-  else if (num_type == 3)
-  {
-  }
+  printf("-----NV(long long): %lld\n", llv);
+  goto ret;
+
+dec_integer:
+  sscanf(content, "%lld", &llv);
+  printf("-----NV(long long): %lld\n", llv);
+
+ret:
   return finish(pos);
 }
 
@@ -664,7 +698,7 @@ __LJS_NT_Return *next_token(int position)
             content[content_pos++] = c;
             non_decimal = 1;
           }
-        while (is_digit(c = nt_get_char(pos++)))
+        while (is_digit_or_abcdef(c = nt_get_char(pos++)))
           content[content_pos++] = c;
         if (c == LJS(DOT)[0] && non_decimal == 0)
         {
