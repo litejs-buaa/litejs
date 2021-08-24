@@ -130,6 +130,63 @@ int is_punctuator_repeat(char c)
   return 0;
 }
 
+int parse_escape(int pos, int *next_pos)
+{
+  c = nt_get_char(pos);
+  switch (c)
+  {
+  case 'b':
+    c = '\b';
+    break;
+  case 'f':
+    c = '\f';
+    break;
+  case 'n':
+    c = '\n';
+    break;
+  case 'r':
+    c = '\r';
+    break;
+  case 't':
+    c = '\t';
+    break;
+  case 'v':
+    c = '\v';
+    break;
+  case 'x':
+  case 'u':
+    break;
+  case '0':
+  case '1':
+  case '2':
+  case '3':
+  case '4':
+  case '5':
+  case '6':
+  case '7':
+    c -= '0';
+    break;
+    // char v;
+    // v = nt_get_char(pos) - '0';
+    // if (v > 7)
+    //   break;
+    // c = (c << 3) | v;
+    // pos++;
+    // if (c >= 32)
+    //   break;
+    // v = nt_get_char(pos) - '0';
+    // if (v > 7)
+    //   break;
+    // c = (c << 3) | v;
+    // pos++;
+    // break;
+  default:
+    return -2;
+  }
+  *next_pos = pos;
+  return c;
+}
+
 __LJS_NT_Return *identifier_finish(int pos);
 __LJS_NT_Return *punctuator_finish(int pos);
 __LJS_NT_Return *next_token(int position);
@@ -670,6 +727,45 @@ __LJS_NT_Return *next_token(int position)
       }
     case DOUBLEQUOTE:
       c = nt_get_char(pos++);
+      if (c == '\\')
+      {
+        c = nt_get_char(pos);
+        switch (c)
+        {
+        case '\'':
+          nt_error(pos);
+          return 0;
+        case '\"':
+        case '\\':
+          break;
+        case '\r':
+          if (nt_get_char(pos + 1) == '\n')
+          {
+            pos++;
+          }
+        case '\n':
+          pos++;
+          continue;
+        default:
+        {
+          int ret = parse_escape(pos, &pos);
+          if (ret == -1)
+          {
+            nt_error(pos);
+          }
+          else if (ret < 0)
+          {
+            pos++;
+          }
+          else
+          {
+            c = ret;
+            NEXTCHAR;
+          }
+        }
+        break;
+        }
+      }
       if (c != LJS(DOUBLEQUOTE))
         NEXTCHAR
       else

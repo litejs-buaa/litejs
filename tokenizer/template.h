@@ -210,3 +210,12 @@ typedef struct
   Token *token;
   int position;
 } __LJS_NT_Return;
+
+#define UTF8_CHAR_LEN_MAX 6
+static const unsigned int utf8_min_code[5] = {
+    0x80, 0x800, 0x10000, 0x00200000, 0x04000000,
+};
+
+static const unsigned char utf8_first_code_mask[5] = {
+    0x1f, 0xf, 0x7, 0x3, 0x1,
+};
