@@ -153,7 +153,7 @@ int is_punctuator_repeat(char c)
 
 int parse_escape(int pos, int *next_pos)
 {
-  c = nt_get_char(pos);
+  c = nt_get_char(pos++);
   switch (c)
   {
   case 'b':
@@ -174,6 +174,8 @@ int parse_escape(int pos, int *next_pos)
   case 'v':
     c = '\v';
     break;
+  case '\\':
+    c = '\\';
   case 'x':
   case 'u':
     break;
@@ -860,7 +862,6 @@ __LJS_NT_Return *next_token(int position)
           nt_error(pos);
           return 0;
         case '\"':
-        case '\\':
           break;
         case '\r':
           if (nt_get_char(pos + 1) == '\n')
