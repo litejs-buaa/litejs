@@ -9,6 +9,8 @@
   STAT(SINGLEQUOTE)        \
   STAT(DOUBLEQUOTE)        \
   STAT(STRING)             \
+  STAT(REG_DIV)            \
+  STAT(REGEXP)             \
   STAT(NUMBER)             \
   STAT(IDENT)              \
   STAT(PUNCT)              \

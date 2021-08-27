@@ -679,6 +679,24 @@ __LJS_NT_Return *punctuator_finish(int pos)
   return finish(pos);
 }
 
+__LJS_NT_Return *regexp_finish(int pos)
+{
+  int i;
+  char content_copy[100];
+  strcpy(content_copy, content);
+  for (i = strlen(content) - 1; i >= 0; --i)
+  {
+    if (content[i] == '/')
+    {
+      content_copy[i] = '\0';
+      break;
+    }
+  }
+  printf("-----REGEXP(b=%s, m=%s)\n", content_copy, &content_copy[i + 1]);
+  status = REGEXP;
+  return finish(pos);
+}
+
 __LJS_NT_Return *finish(int new_pos)
 {
   Token *token = (Token *)malloc(sizeof(Token));
@@ -725,6 +743,12 @@ __LJS_NT_Return *next_token(int position)
       else if (c == LJS(DOUBLEQUOTE))
       {
         status = DOUBLEQUOTE;
+        content[--content_pos] = '\0';
+        continue;
+      }
+      else if (c == LJS(DIV)[0])
+      {
+        status = REG_DIV;
         content[--content_pos] = '\0';
         continue;
       }
@@ -844,6 +868,44 @@ __LJS_NT_Return *next_token(int position)
       return finish(pos);
     case SINGLEQUOTE:
       c = nt_get_char(pos++);
+      if (c == '\\')
+      {
+        c = nt_get_char(pos);
+        switch (c)
+        {
+        case '\'':
+          break;
+        case '\"':
+          nt_error(pos);
+          break;
+        case '\r':
+          if (nt_get_char(pos + 1) == '\n')
+          {
+            pos++;
+          }
+        case '\n':
+          pos++;
+          continue;
+        default:
+        {
+          int ret = parse_escape(pos, &pos);
+          if (ret == -1)
+          {
+            nt_error(pos);
+          }
+          else if (ret < 0)
+          {
+            pos++;
+          }
+          else
+          {
+            c = ret;
+            NEXTCHAR;
+          }
+        }
+        break;
+        }
+      }
       if (c != LJS(SINGLEQUOTE))
         NEXTCHAR
       else
@@ -860,7 +922,7 @@ __LJS_NT_Return *next_token(int position)
         {
         case '\'':
           nt_error(pos);
-          return 0;
+          break;
         case '\"':
           break;
         case '\r':
@@ -897,6 +959,23 @@ __LJS_NT_Return *next_token(int position)
       {
         status = STRING;
         return finish(pos);
+      }
+    case REG_DIV:
+      c = nt_get_char(pos++);
+      if (c == '\\')
+      {
+        c = nt_get_char(pos++);
+        NEXTCHAR;
+      }
+      if (c != LJS(DIV)[0])
+        NEXTCHAR
+      else
+      {
+        content[content_pos++] = c;
+        while (is_identifier_part(c = nt_get_char(pos++)))
+          content[content_pos++] = c;
+
+        return regexp_finish(--pos);
       }
     }
   }
