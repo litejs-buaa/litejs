@@ -282,7 +282,19 @@ int main()
       continue;
     if (res->token->type == NEWLINE)
       continue;
-    printf("[%3d]%6s: '%s'\n", position, translate(res->token->type), res->token->content);
+    if (res->token->type == STRING)
+    {
+      printf("[%3d]%6s: '", position, translate(res->token->type));
+      for (size_t i = 0; res->token->content_16[i] != 0; i++)
+      {
+        char temp [4];
+        c16rtomb(temp, res->token->content_16[i], NULL);
+        printf("%s",temp);
+      }
+      printf("'\n", position);
+    }
+    else
+      printf("[%3d]%6s: '%s'\n", position, translate(res->token->type), res->token->content);
   }
 
   fclose(fp);
@@ -739,7 +751,7 @@ __LJS_NT_Return *finish(int new_pos)
   token->type = status;
   if (token->type == STRING)
   {
-    memcpy(token->content, content_16, sizeof(content_16));
+    memcpy(token->content_16, content_16, sizeof(content_16));
     memset(content_16, 0, sizeof(content));
   }
   else
