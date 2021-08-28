@@ -209,7 +209,7 @@ const char *STAT_STRING[] = {FOREACH_STAT(GENERATE_STRING)};
 typedef struct token
 {
   int type;
-  char content[100];
+  char content[200];
 } Token;
 
 typedef struct

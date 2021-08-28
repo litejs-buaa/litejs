@@ -13,6 +13,8 @@ int token_loc;
 char content[100];
 int content_pos;
 char c;
+char16_t content_16[100];
+char16_t c_16;
 
 char nt_get_char(int position)
 {
@@ -151,9 +153,21 @@ int is_punctuator_repeat(char c)
   return 0;
 }
 
+static inline int from_hex(int c)
+{
+  if (c >= '0' && c <= '9')
+    return c - '0';
+  else if (c >= 'A' && c <= 'F')
+    return c - 'A' + 10;
+  else if (c >= 'a' && c <= 'f')
+    return c - 'a' + 10;
+  else
+    return -1;
+}
+
 int parse_escape(int pos, int *next_pos)
 {
-  c = nt_get_char(pos++);
+  int c = nt_get_char(pos++);
   switch (c)
   {
   case 'b':
@@ -176,9 +190,32 @@ int parse_escape(int pos, int *next_pos)
     break;
   case '\\':
     c = '\\';
+    break;
   case 'x':
   case 'u':
+  {
+    int h, n, i;
+    if (c == 'x')
+    {
+      n = 2;
+    }
+    else
+    {
+      n = 4;
+    }
+    c = 0;
+    for (i = 0; i < n; i++)
+    {
+      h = nt_get_char(pos++);
+      h = from_hex(h);
+      if (h < 0)
+      {
+        return -1;
+      }
+      c = (c << 4) | h;
+    }
     break;
+  }
   case '0':
   case '1':
   case '2':
@@ -188,7 +225,6 @@ int parse_escape(int pos, int *next_pos)
   case '6':
   case '7':
     c -= '0';
-    break;
     // char v;
     // v = nt_get_char(pos) - '0';
     // if (v > 7)
@@ -202,7 +238,7 @@ int parse_escape(int pos, int *next_pos)
     //   break;
     // c = (c << 3) | v;
     // pos++;
-    // break;
+    break;
   default:
     return -2;
   }
@@ -700,8 +736,14 @@ __LJS_NT_Return *regexp_finish(int pos)
 __LJS_NT_Return *finish(int new_pos)
 {
   Token *token = (Token *)malloc(sizeof(Token));
-  sprintf(token->content, "%s", content);
   token->type = status;
+  if (token->type == STRING)
+  {
+    memcpy(token->content, content_16, sizeof(content_16));
+    memset(content_16, 0, sizeof(content));
+  }
+  else
+    sprintf(token->content, "%s", content);
   __LJS_NT_Return *res = (__LJS_NT_Return *)malloc(sizeof(__LJS_NT_Return));
   res->token = token;
   res->position = new_pos;
@@ -899,15 +941,19 @@ __LJS_NT_Return *next_token(int position)
           }
           else
           {
-            c = ret;
-            NEXTCHAR;
+            c_16 = ret;
+            content_16[content_pos++] = c_16;
+            continue;
           }
         }
         break;
         }
       }
       if (c != LJS(SINGLEQUOTE))
-        NEXTCHAR
+      {
+        content_16[content_pos++] = c;
+        continue;
+      }
       else
       {
         status = STRING;
@@ -946,15 +992,19 @@ __LJS_NT_Return *next_token(int position)
           }
           else
           {
-            c = ret;
-            NEXTCHAR;
+            c_16 = ret;
+            content_16[content_pos++] = c_16;
+            continue;
           }
         }
         break;
         }
       }
       if (c != LJS(DOUBLEQUOTE))
-        NEXTCHAR
+      {
+        content_16[content_pos++] = c;
+        continue;
+      }
       else
       {
         status = STRING;
