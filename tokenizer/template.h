@@ -210,6 +210,7 @@ typedef struct token
 {
   int type;
   char content[100];
+  char16_t content_16[100];
 } Token;
 
 typedef struct
