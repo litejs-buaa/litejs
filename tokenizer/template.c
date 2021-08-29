@@ -797,7 +797,38 @@ __LJS_NT_Return *next_token(int position)
       else if (is_punctuator_single(c))
         return punctuator_finish(pos);
       else if (is_punctuator_waiteq(c))
-        SETSTAT(PUNCT_WAITEQ)
+      {
+        if (c == LJS(DIV)[0])
+        {
+          if ((c = nt_get_char(pos++)) == LJS(DIV)[0])
+          {
+            do
+            {
+              c = nt_get_char(pos++);
+            } while (c != '\r' || c != '\n');
+            if (c == '\n')
+              continue;
+            else if (c == '\r' && (c = nt_get_char(pos++)) == '\n')
+              continue;
+            else
+            {
+              pos--;
+              continue;
+            }
+          }
+          else
+          {
+            pos--;
+            goto WAITEQ;
+          }
+        }
+        else
+        {
+        WAITEQ:
+          status = PUNCT_WAITEQ;
+          continue;
+        }
+      }
       else if (is_punctuator_eqstart(c))
         SETSTAT(PUNCT_EQSTART)
       else if (is_punctuator_repeat(c))
