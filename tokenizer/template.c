@@ -164,7 +164,7 @@ static inline int from_hex(int c)
   else
     return -1;
 }
-
+// 解析转义字符串，包括/u和/x
 int parse_escape(int pos, int *next_pos)
 {
   int c = nt_get_char(pos++);
