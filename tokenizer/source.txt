@@ -1,7 +1,11 @@
-class test{
+class test{//test11
   constructor(){}
-}
-
+} //test22
+// test33
+/* test44 */
+/*class test{//test11
+  constructor(){}
+}*/
 var unicode = ["\u0030", "\u0031", "\u0032"];
 var character = ["0", "1", "2"];
 for (var index = 0; index <= 9; index++) {
@@ -17,7 +21,7 @@ let more_num = 1. + .02 +.03e8 +4.e-2
 let non_decimal_num = 0b00101010+0O777-0xAAAE+100-0X1+0B0-0o0
 let decimal_num = 1234567890
 
-var regexp_str = /\w+/g
+var regexp_str = /\w+\/*/g
 
 let empty_str = ''
 let str_test = "\\\t\\\t\

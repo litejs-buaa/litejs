@@ -287,11 +287,11 @@ int main()
       printf("[%3d]%6s: '", position, translate(res->token->type));
       for (size_t i = 0; res->token->content_16[i] != 0; i++)
       {
-        char temp [4];
+        char temp[4];
         c16rtomb(temp, res->token->content_16[i], NULL);
-        printf("%s",temp);
+        printf("%s", temp);
       }
-      printf("'\n", position);
+      printf("'\n");
     }
     else
       printf("[%3d]%6s: '%s'\n", position, translate(res->token->type), res->token->content);
@@ -740,7 +740,7 @@ __LJS_NT_Return *regexp_finish(int pos)
       break;
     }
   }
-  printf("-----REGEXP(b=%s, m=%s)\n", content_copy, &content_copy[i + 1]);
+  printf("-----REGEXP(body=%s, flag=%s)\n", content_copy, &content_copy[i + 1]);
   status = REGEXP;
   return finish(pos);
 }
@@ -802,6 +802,43 @@ __LJS_NT_Return *next_token(int position)
       }
       else if (c == LJS(DIV)[0])
       {
+        c = nt_get_char(pos++);
+        if (c == LJS(DIV)[0])
+        {
+          content[--content_pos] = '\0';
+          do
+          {
+            c = nt_get_char(pos++);
+          } while (c != '\r' && c != '\n');
+
+          if (c == '\n')
+            ;
+          else if (c == '\r' && (c = nt_get_char(pos++)) == '\n')
+            ;
+          else
+            pos--;
+
+          continue;
+        }
+        else if (c == LJS(STAR)[0])
+        {
+          content[--content_pos] = '\0';
+
+        MULTI_COMMENT:
+          do
+          {
+            c = nt_get_char(pos++);
+          } while (c != LJS(STAR)[0]);
+
+          c = nt_get_char(pos++);
+          if (c != LJS(DIV)[0])
+            goto MULTI_COMMENT;
+          else
+            continue;
+        }
+        else
+          pos--;
+
         status = REG_DIV;
         content[--content_pos] = '\0';
         continue;
@@ -851,38 +888,7 @@ __LJS_NT_Return *next_token(int position)
       else if (is_punctuator_single(c))
         return punctuator_finish(pos);
       else if (is_punctuator_waiteq(c))
-      {
-        if (c == LJS(DIV)[0])
-        {
-          if ((c = nt_get_char(pos++)) == LJS(DIV)[0])
-          {
-            do
-            {
-              c = nt_get_char(pos++);
-            } while (c != '\r' || c != '\n');
-            if (c == '\n')
-              continue;
-            else if (c == '\r' && (c = nt_get_char(pos++)) == '\n')
-              continue;
-            else
-            {
-              pos--;
-              continue;
-            }
-          }
-          else
-          {
-            pos--;
-            goto WAITEQ;
-          }
-        }
-        else
-        {
-        WAITEQ:
-          status = PUNCT_WAITEQ;
-          continue;
-        }
-      }
+        SETSTAT(PUNCT_WAITEQ)
       else if (is_punctuator_eqstart(c))
         SETSTAT(PUNCT_EQSTART)
       else if (is_punctuator_repeat(c))
