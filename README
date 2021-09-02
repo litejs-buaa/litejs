@@ -4,7 +4,11 @@
 
 ## 仓库结构
 
+ECMA/ -> ECMA标准文档
+
 flex_and_bison/ -> 使用flex和bison进行词法分析的可行性研究
+
+quickjs_test_result/ -> 对quickjs执行test262测试套件（使用默认设置和打开所有测试用例两种情况）的结果，及其失败用例的分类
 
 test262/ -> [Test262: ECMAScript Test Suite (ECMA TR/104)](https://github.com/tc39/test262)
 
